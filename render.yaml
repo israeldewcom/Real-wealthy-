@@ -1,0 +1,27 @@
+# Render Configuration File
+services:
+  - type: web
+    name: raw-wealthy-backend
+    env: node
+    plan: free
+    region: ohio
+    buildCommand: npm install && npm run seed
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        fromDatabase:
+          name: raw-wealthy-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+
+databases:
+  - name: raw-wealthy-db
+    plan: free
+    region: ohio
+    databaseName: raw-wealthy
+    user: rawwealthy
