@@ -6,20 +6,12 @@ const compression = require('compression');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const mongoSanitize = require('express-mongo-sanitize');
-const cron = require('node-cron');
 const path = require('path');
 const http = require('http');
-const socketIo = require('socket.io');
 require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, {
-  cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
-    methods: ["GET", "POST"]
-  }
-});
 
 // Security Middleware
 app.use(helmet());
@@ -67,10 +59,52 @@ app.get('/health', (req, res) => {
   });
 });
 
+// API Routes
+app.use('/api/auth', require('./routes/authAdvanced'));
+app.use('/api/users', require('./routes/usersAdvanced'));
+app.use('/api/investments', require('./routes/investmentsAdvanced'));
+app.use('/api/plans', require('./routes/plansAdvanced'));
+
+// Test Route
+app.get('/api/test', (req, res) => {
+  res.json({
+    success: true,
+    message: 'API is working!',
+    version: '5.0.0',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// 404 Handler
+app.use('*', (req, res) => {
+  res.status(404).json({ 
+    success: false, 
+    message: `Route ${req.originalUrl} not found`,
+    available_routes: [
+      '/health',
+      '/api/test', 
+      '/api/auth/register',
+      '/api/auth/login',
+      '/api/plans',
+      '/api/investments'
+    ]
+  });
+});
+
+// Error Handler
+app.use((err, req, res, next) => {
+  console.error('🔴 Error:', err.message);
+  
+  res.status(500).json({
+    success: false,
+    message: process.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message
+  });
+});
+
 // Database Connection
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/raw-wealthy', {
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 30000,
       socketTimeoutMS: 45000,
@@ -85,39 +119,6 @@ const connectDB = async () => {
   }
 };
 
-// Basic Routes (Add these minimal routes first)
-app.use('/api/auth', require('./routes/authAdvanced'));
-app.use('/api/users', require('./routes/usersAdvanced'));
-app.use('/api/investments', require('./routes/investmentsAdvanced'));
-app.use('/api/plans', require('./routes/plansAdvanced'));
-
-// WebSocket Connection
-io.on('connection', (socket) => {
-  console.log('🔌 New client connected:', socket.id);
-  
-  socket.on('disconnect', () => {
-    console.log('🔌 Client disconnected:', socket.id);
-  });
-});
-
-// 404 Handler
-app.use('*', (req, res) => {
-  res.status(404).json({ 
-    success: false, 
-    message: `Route ${req.originalUrl} not found` 
-  });
-});
-
-// Error Handler
-app.use((err, req, res, next) => {
-  console.error('🔴 Error:', err.message);
-  
-  res.status(500).json({
-    success: false,
-    message: process.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message
-  });
-});
-
 const PORT = process.env.PORT || 5000;
 
 connectDB().then(() => {
@@ -125,6 +126,7 @@ connectDB().then(() => {
     console.log(`🎯 Raw Wealthy Server running on port ${PORT}`);
     console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`📊 Health Check: http://localhost:${PORT}/health`);
+    console.log(`🔌 API Test: http://localhost:${PORT}/api/test`);
   });
 }).catch(err => {
   console.error('❌ Failed to start server:', err);
