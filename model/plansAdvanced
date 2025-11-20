@@ -1,0 +1,57 @@
+const mongoose = require('mongoose');
+
+const investmentPlanSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  description: {
+    type: String,
+    required: true
+  },
+  material_type: {
+    type: String,
+    required: true
+  },
+  min_amount: {
+    type: Number,
+    required: true
+  },
+  max_amount: {
+    type: Number,
+    required: true
+  },
+  daily_interest: {
+    type: Number,
+    required: true
+  },
+  total_interest: {
+    type: Number,
+    required: true
+  },
+  duration: {
+    type: Number,
+    required: true
+  },
+  risk_level: {
+    type: String,
+    required: true
+  },
+  category: {
+    type: String,
+    required: true
+  },
+  is_active: {
+    type: Boolean,
+    default: true
+  },
+  is_popular: {
+    type: Boolean,
+    default: false
+  }
+}, {
+  timestamps: true
+});
+
+module.exports = mongoose.model('InvestmentPlan', investmentPlanSchema);
