@@ -1,0 +1,52 @@
+const express = require('express');
+const InvestmentPlan = require('../models/InvestmentPlanAdvanced');
+const router = express.Router();
+
+// GET /api/plans - Get all investment plans
+router.get('/', async (req, res) => {
+  try {
+    const plans = await InvestmentPlan.find({ is_active: true });
+    
+    res.json({
+      success: true,
+      message: 'Investment plans fetched successfully',
+      data: {
+        plans: plans
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// GET /api/plans/:id - Get single plan
+router.get('/:id', async (req, res) => {
+  try {
+    const plan = await InvestmentPlan.findById(req.params.id);
+    
+    if (!plan) {
+      return res.status(404).json({
+        success: false,
+        message: 'Investment plan not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Investment plan fetched successfully',
+      data: {
+        plan: plan
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+module.exports = router;
